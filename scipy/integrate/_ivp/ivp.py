@@ -154,7 +154,8 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, args=None, **options):
+              events=None, termination=None, vectorized=False, args=None, 
+            **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
@@ -268,6 +269,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
         You can assign attributes like ``event.terminal = True`` to any
         function in Python.
+    termination : callable, optional
+        Condition for early termination of the integration. Provide a function
+        with signature ``termination(t, y, solver ,*args)``. This will be called
+        at the end of each step. If the result evaluates to `True`, no further 
+        integration steps will be performed; otherwise integration will continue
+        unless/until other termination criteria are met.
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
     args : tuple, optional
@@ -651,7 +658,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
         if t_eval is not None and dense_output:
             ti.append(t)
-
+        # Testing the termination function should be the final step
+        # in the solver loop.
+        if termination is not None:
+            if termination(t, y, solver, *args):
+                status = 1
     message = MESSAGES.get(status, message)
 
     if t_events is not None:
